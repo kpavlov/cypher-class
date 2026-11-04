@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Тайна частых букв</title>
+  <link rel="stylesheet" href="vendor/reveal/reset.css">
+  <link rel="stylesheet" href="vendor/reveal/reveal.css">
+  <link rel="stylesheet" href="vendor/reveal/theme/white.css">
+  <link rel="stylesheet" href="assets/custom.css">
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <!-- Один раздел = одна папка со slides.md. Слайды внутри файла разделяет строка ---
+           Заметки докладчика: строка Note: (клавиша S открывает режим докладчика).
+           Хотите один общий файл? Оставьте одну секцию: <section data-markdown="slides.md" ...> -->
+      <section data-markdown="slides/00-intro/slides.md"
+               data-separator="^\n---\n" data-separator-notes="^Note:"></section>
+      <section data-markdown="slides/01-history/slides.md"
+               data-separator="^\n---\n" data-separator-notes="^Note:"></section>
+      <section data-markdown="slides/02-frequency/slides.md"
+               data-separator="^\n---\n" data-separator-notes="^Note:"></section>
+      <section data-markdown="slides/03-breaking/slides.md"
+               data-separator="^\n---\n" data-separator-notes="^Note:"></section>
+      <section data-markdown="slides/04-game/slides.md"
+               data-separator="^\n---\n" data-separator-notes="^Note:"></section>
+      <section data-markdown="slides/05-math-wins/slides.md"
+               data-separator="^\n---\n" data-separator-notes="^Note:"></section>
+      <section data-markdown="slides/06-wrap-up/slides.md"
+               data-separator="^\n---\n" data-separator-notes="^Note:"></section>
+    </div>
+  </div>
+  <script src="vendor/reveal/reveal.js"></script>
+  <script src="vendor/reveal/plugin/markdown.js"></script>
+  <script src="vendor/reveal/plugin/notes.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      width: 1280,
+      height: 720,
+      margin: 0.04,
+      slideNumber: 'c/t',
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      controls: true,
+      progress: true,
+      plugins: [RevealMarkdown, RevealNotes]
+    });
+    // клик по картинке открывает её на весь экран; закрыть — клик или Esc
+    const zoom = document.createElement('div');
+    zoom.className = 'zoom';
+    zoom.hidden = true;
+    document.body.append(zoom);
+    const closeZoom = () => { zoom.hidden = true; zoom.innerHTML = ''; };
+    zoom.addEventListener('click', closeZoom);
+    document.addEventListener('keydown', e => { if (!zoom.hidden && e.key === 'Escape') { closeZoom(); e.stopPropagation(); } }, true);
+    document.querySelector('.reveal').addEventListener('click', e => {
+      const img = e.target.closest('.slides img');
+      if (img) { zoom.innerHTML = `<img src="${img.src}" alt="">`; zoom.hidden = false; }
+    });
+    // .alpha: каждая буква получает свой цвет, одинаковые буквы в строках — одинаковый цвет
+    Reveal.on('ready', () => document.querySelectorAll('.alpha div').forEach(row => {
+      const abc = 'абвгдежзийклмнопрстуфхцчшщъыьэюя';
+      row.innerHTML = [...row.textContent].filter(c => c !== ' ').map(c =>
+        `<span style="background:hsl(${abc.indexOf(c) * 137.5 % 360} 75% 78%)">${c}</span>`).join('');
+    }));
+  </script>
+</body>
+</html>

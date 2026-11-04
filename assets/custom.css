@@ -1,0 +1,58 @@
+:root {
+  --r-main-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --r-heading-font: var(--r-main-font);
+  --r-heading-text-transform: none;
+  --r-heading-letter-spacing: 0;
+  --r-main-font-size: 36px;
+  --r-code-font: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r-background: #ffffff;
+  --r-background-color: #ffffff;
+  --r-main-color: #0f1b33;
+  --r-heading-color: #0f1b33;
+  --r-link-color: #9d1469;
+  --r-link-color-hover: #6e0d4c;
+  --r-selection-background-color: #f6d3e6;
+  --r-selection-color: #0f1b33;
+}
+.reveal h1 { font-size: 2.1em; }
+.reveal h2 { font-size: 1.5em; margin-bottom: 0.6em; }
+.reveal strong, .reveal b { color: #9d1469; font-weight: 600; }
+.reveal ul, .reveal ol { display: block; text-align: left; margin-left: auto; margin-right: auto; width: fit-content; max-width: 100%; }
+.reveal li { margin: 0.25em 0; }
+.reveal table { font-size: 0.8em; margin: 0.4em auto; }
+.reveal table th, .reveal table td { text-align: left; padding: 0.25em 0.8em; border-color: #b8c5dc; }
+.reveal pre { width: 100%; box-shadow: none; font-size: 0.8em; }
+.reveal pre code { max-height: none; padding: 0.6em 0.8em; background: #f3f6fb; border: 1px solid #b8c5dc; border-radius: 8px; color: #0f1b33; }
+.reveal blockquote { box-sizing: border-box; overflow-wrap: anywhere; width: 100%; box-shadow: none; background: #f3f6fb; border-left: 6px solid #9d1469; color: #0f1b33; padding: 0.6em 0.9em; text-align: left; font-style: normal; font-family: var(--r-code-font); font-size: 0.72em; line-height: 1.55; }
+.reveal blockquote p { margin: 0; }
+.reveal iframe.r-stretch { width: 100%; border: 1px solid #b8c5dc; border-radius: 10px; background: #ffffff; }
+.reveal code { color: #9d1469; }
+
+/* окно приложения («Отправить на расшифровку») — во весь экран, светлое */
+.reveal-viewport { --r-overlay-padding: 0px; }
+.r-overlay-preview .r-overlay-content { background: #fff; border-radius: 0; }
+
+/* картинка на весь экран по клику */
+.reveal .slides img { cursor: zoom-in; }
+.zoom { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.96); cursor: zoom-out; }
+.zoom[hidden] { display: none; }
+.zoom img { width: 96vw; height: 96vh; object-fit: contain; }
+
+/* алфавит Цезаря: цвет букв задаёт скрипт в index.html */
+.reveal .alpha { font-family: var(--r-code-font); font-size: 0.85em; font-weight: 700; margin: 0.6em 0; }
+.reveal .alpha div { display: flex; justify-content: center; gap: 2px; margin: 6px 0; }
+.reveal .alpha span { width: 1.1em; padding: 0.12em 0; text-align: center; border-radius: 6px; color: #0f1b33; }
+
+/* слайды с картинками */
+.reveal .cols{display:flex;gap:40px;align-items:center;justify-content:center;text-align:left}
+.reveal .cols>*{flex:1 1 0;min-width:0}
+.reveal .cols.fit>*{flex:0 1 auto}
+.reveal figure{margin:0;text-align:center}
+.reveal figure img{display:block;margin:0 auto;border:0;box-shadow:none;max-width:100%;object-fit:contain}
+.reveal figcaption{font-size:.7em;color:#4b5b78;margin-top:.4em;line-height:1.25}
+.reveal .tall img{max-height:430px}
+.reveal .wide img{max-height:420px}
+
+/* кнопка «Отправить на расшифровку» */
+.reveal a.send-btn{display:inline-block;margin-top:.8em;padding:.45em 1.1em;border-radius:999px;background:#9d1469;color:#fff;font-size:.62em;font-weight:700;text-decoration:none;box-shadow:0 2px 0 #4a0830}
+.reveal a.send-btn:hover{background:#6e0d4c;color:#fff}

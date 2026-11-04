@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тайна частых букв</title>
+<script>["embed","light"].forEach(function(k){if(new RegExp("[?&]"+k+"\\b").test(location.search))document.documentElement.classList.add(k)})</script>
+<script>/* ?fit — приложение в полноэкранном окне: масштабируем под размер окна */
+if(/[?&]fit\b/.test(location.search)){var z=function(){document.documentElement.style.zoom=Math.min(innerWidth/1200,innerHeight/700)};z();addEventListener("resize",z)}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* сброс, который раньше добавляла оболочка артефакта */
+[hidden]{display:none!important}
+body{margin:0}
+img{max-width:100%}
+
+/* Layout: тот же «ночной экран», что и в галерее формул; вкладки идут по ходу урока: частоты → дерево → сжатие → расшифровка */
+:root{
+  --ink:#0b1220; --panel:#121b2e; --panel2:#0e1626; --grid:#1a2740; --line:#2a3a5c;
+  --fg:#e8eefc; --muted:#93a4c8;
+  --gold:#ff7ac6; --rose:#ff8a5c; --sky:#5cc8ff; --leaf:#7ee08f; --hl:#3a1c2f;
+  --display:"Unbounded","Trebuchet MS",sans-serif;
+  --body:"Golos Text","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+html.light{
+  --ink:#ffffff; --panel:#f3f6fb; --panel2:#e6edf7; --grid:#dde5f1; --line:#b8c5dc;
+  --fg:#0f1b33; --muted:#4b5b78;
+  --gold:#9d1469; --rose:#c2410c; --sky:#0b6fa8; --leaf:#1b7f3a; --hl:#f6d3e6;
+  color-scheme:light;
+}
+html,body{background:var(--ink);color:var(--fg)}
+body{font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px 40px}
+.wrap{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 24px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(22px,3.2vw,34px);margin:0;text-wrap:balance}
+h1 span{color:var(--gold)}
+.sub{color:var(--muted);margin:0;max-width:62ch}
+nav{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+nav button{flex:none;font:600 15px var(--body);color:var(--muted);background:transparent;
+  border:1px solid var(--line);border-radius:999px;padding:8px 16px;cursor:pointer}
+nav button:hover{color:var(--fg);border-color:var(--muted)}
+nav button[aria-selected="true"]{color:var(--ink);background:var(--gold);border-color:var(--gold)}
+button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+.panel{display:flex;flex-direction:column;gap:16px}
+.split{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:16px;align-items:start}
+.split.wide-r{grid-template-columns:minmax(0,1fr) minmax(0,400px)}
+@media (max-width:900px){.split,.split.wide-r{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;
+  display:flex;flex-direction:column;gap:14px;min-width:0}
+h2{font-family:var(--display);font-weight:500;font-size:19px;margin:0;text-wrap:balance}
+h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+p{margin:0}
+.muted{color:var(--muted)}
+label.lab{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+textarea{width:100%;box-sizing:border-box;min-height:110px;resize:vertical;font:500 19px/1.5 var(--mono);
+  color:var(--fg);background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px}
+textarea.bits{font-size:17px;letter-spacing:.08em;word-break:break-all}
+select{font:600 15px var(--body);color:var(--fg);background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:600 14px var(--body);color:var(--fg);background:var(--line);border:0;border-radius:8px;padding:9px 14px;cursor:pointer}
+.btn:hover{filter:brightness(1.2)}
+.btn.primary{background:var(--gold);color:var(--ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.btn.ghost:hover{color:var(--fg)}
+.btn:disabled{opacity:.4;cursor:default;filter:none}
+.facts{font-family:var(--mono);font-size:14px;color:var(--muted)}
+.facts b{color:var(--gold);font-weight:600}
+.scroll{overflow-x:auto}
+.tip{color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:12px}
+.tip b{display:block;color:var(--fg);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;margin-bottom:2px}
+.empty{color:var(--muted);font-style:italic}
+.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+.steps b{color:var(--gold);font-weight:600}
+
+/* гистограмма */
+#hist{min-height:200px}
+#hist svg{display:block}
+.ax{fill:var(--muted);font:12px var(--mono)}
+.gl{stroke:var(--grid);stroke-width:1}
+.bl{font:600 17px var(--mono)}
+.bc{fill:var(--fg);font:600 13px var(--mono)}
+.mt{fill:var(--gold);font:600 12px var(--body);letter-spacing:.06em}
+
+/* дерево */
+svg.tree{display:block;margin-inline:auto;max-width:none}
+.edge{stroke:var(--line);stroke-width:2}
+.edge.hi{stroke:var(--gold);stroke-width:4}
+.elab{fill:var(--muted);font:600 14px var(--mono)}
+.elab.hi{fill:var(--gold)}
+.inode{fill:var(--panel2);stroke:var(--line);stroke-width:2}
+.inode.hi{stroke:var(--gold);stroke-width:3}
+.inode.cur,.inode.new{fill:var(--gold);stroke:var(--gold)}
+.icnt{fill:var(--fg);font:600 13px var(--mono)}
+.icnt.dark{fill:var(--ink)}
+.lnode{fill:var(--panel2);stroke-width:2.5}
+.lnode.hi{fill:var(--hl);stroke-width:4}
+.lnode.m,.inode.m{stroke:var(--gold);stroke-dasharray:5 4;stroke-width:3}
+.lch{font:600 20px var(--mono)}
+.lcnt{fill:var(--muted);font:12px var(--mono)}
+.lcode{font:600 14px var(--mono);letter-spacing:.06em}
+.say{font-size:17px;min-height:3em}
+.say b{color:var(--gold);font-weight:600}
+
+/* сжатие */
+.source{font:500 22px/1.7 var(--mono);word-break:break-all}
+.source span{color:var(--muted);border-radius:4px;padding:0 1px}
+.source span.done{color:var(--c)}
+.source span.now{background:var(--gold);color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:flex;flex-direction:column;align-items:center;min-width:34px;padding:3px 7px 6px;
+  background:var(--panel2);border-radius:8px;border-top:3px solid var(--c)}
+.chip .ch{font:600 18px var(--mono);color:var(--fg)}
+.chip .bits{font:600 16px var(--mono);color:var(--c);letter-spacing:.06em}
+.chip.pop{animation:pop .4s ease-out}
+@keyframes pop{from{transform:scale(1.5);opacity:.2}}
+.stream{font:600 17px/1.8 var(--mono);word-break:break-all;letter-spacing:.05em}
+.stream span{color:var(--c);padding:0 1px}
+.stream span:nth-child(even){background:var(--grid)}
+.bars{display:flex;flex-direction:column;gap:12px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;font-size:14px}
+.bar .lbl{color:var(--muted)}
+.bar .val{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.bar .track{grid-column:1/-1;height:12px;background:var(--panel2);border-radius:6px;overflow:hidden}
+.bar .fill{height:100%;border-radius:6px;background:var(--c);transition:width .3s}
+.saving{font-family:var(--display);font-weight:500;font-size:20px;color:var(--leaf);text-wrap:balance}
+
+/* словарь */
+.dict{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.entry{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:0 12px;
+  background:var(--panel2);border-radius:10px;padding:8px 12px;border-left:4px solid var(--c);transition:opacity .2s}
+.entry .l{font:600 24px var(--mono);color:var(--c);grid-row:1/3;min-width:1ch;text-align:center}
+.entry .code{font:600 18px var(--mono);color:var(--c);letter-spacing:.08em;word-break:break-all}
+.entry .cnt{font-size:12px;color:var(--muted)}
+.entry .cnt em{font-style:normal;color:var(--ink);background:var(--gold);border-radius:999px;padding:0 7px;margin-left:6px;font-weight:600}
+.entry.dim{opacity:.22}
+.entry.found{background:var(--hl);outline:2px solid var(--gold)}
+.entry .code u{text-decoration:none;background:var(--gold);color:var(--ink);border-radius:3px}
+
+/* расшифровка */
+.cells{display:flex;flex-wrap:wrap;gap:4px;font:600 21px var(--mono)}
+.cell{width:1.25em;text-align:center;border-radius:5px;padding:2px 0;background:var(--panel2);color:var(--muted)}
+.cell.dec{color:var(--c);background:transparent;box-shadow:inset 0 -3px 0 var(--c)}
+.cell.gs{margin-left:10px}
+.cell.pre{background:var(--gold);color:var(--ink)}
+.cell.ptr{outline:2px solid var(--sky);outline-offset:1px}
+.cell.bad{background:var(--rose);color:var(--ink)}
+.out{font:600 clamp(26px,4vw,40px)/1.4 var(--mono);min-height:1.4em;word-break:break-all}
+.out span{color:var(--c)}
+.out span.new{animation:pop .45s ease-out;display:inline-block}
+.out .cur{display:inline-block;width:.6em;border-bottom:3px solid var(--gold);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.reading{font-size:17px;min-height:1.6em}
+.reading b{color:var(--gold);font-family:var(--mono)}
+.ctlrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.speed{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.speed input{accent-color:var(--gold);width:120px}
+
+/* где используется */
+.uses{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.use{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.use .k{font-family:var(--mono);font-size:12px;color:var(--gold);letter-spacing:.06em;text-transform:uppercase}
+.use h2{font-size:18px}
+.use p{color:var(--muted)}
+.morse{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.morse div{background:var(--panel2);border-radius:10px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-family:var(--mono)}
+.morse b{font-size:22px;color:var(--sky)}
+.morse span{font-size:22px;letter-spacing:.15em;color:var(--fg)}
+/* шифр Цезаря и взлом */
+.gold{color:var(--gold)}
+.big-slider{display:flex;flex-direction:column;gap:6px}
+.big-slider .row{flex-wrap:nowrap}
+.big-slider input{flex:1;min-width:0;accent-color:var(--gold)}
+.keyval{font:700 30px var(--display);color:var(--gold);min-width:2ch;font-variant-numeric:tabular-nums}
+.strip{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:3px;min-width:600px;font:600 17px var(--mono);text-align:center}
+.strip span{padding:5px 0;border-radius:4px;background:var(--panel2)}
+.strip .top{color:var(--muted)}
+.strip .bot{color:var(--gold);opacity:.55}
+.strip .u{background:var(--line)}
+.strip .top.u{color:var(--fg)}
+.strip .bot.u{opacity:1}
+.cipher{font:600 clamp(20px,2.6vw,30px)/1.5 var(--mono);color:var(--gold);word-break:break-word}
+.plain-out{font:600 clamp(18px,2.2vw,26px)/1.55 var(--mono);word-break:break-word}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
+#bChart svg{display:block}
+.say.win{color:var(--leaf)}
+.say.win b{color:var(--leaf)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* режим для вставки в слайды: ?embed — без шапки и вкладок, компактные отступы */
+.embed header,.embed nav{display:none}
+.embed body{padding-block:10px}
+.embed .wrap{gap:10px}
+.embed .panel{gap:10px}
+.embed .card{padding:14px;gap:10px}
+.embed textarea{min-height:64px}
+.embed h2{font-size:17px}
+/* слайд «Шифр Цезаря»: крупно и контрастно, чтобы читалось с задних парт */
+.embed #p-caesar .split{grid-template-columns:minmax(0,1fr)}
+.embed #p-caesar .split>.card:first-child{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;align-items:start}
+.embed #p-caesar .split>.card:first-child>.lab{grid-column:1;grid-row:1}
+.embed #p-caesar .split>.card:first-child>textarea{grid-column:1;grid-row:2}
+.embed #p-caesar .split>.card:first-child>.big-slider{grid-column:2;grid-row:1/span 2}
+.embed #p-caesar .split>.card:first-child>.row{grid-column:1/-1}
+.embed #p-caesar label.lab,.embed #p-caesar h3{font-size:16px;color:var(--fg)}
+.embed #p-caesar h2{font-size:28px}
+.embed #p-caesar .muted{font-size:22px;color:var(--fg)}
+.embed #p-caesar textarea{font-size:28px}
+.embed #p-caesar .keyval{font-size:44px}
+.embed #p-caesar .btn{font-size:20px;padding:12px 18px}
+.embed #p-caesar .cipher{font-size:44px}
+.embed #p-caesar .strip{font-size:28px;min-width:0;gap:2px}
+.embed #p-caesar .strip span{padding:6px 0}
+.embed #p-caesar .strip .top{color:var(--fg)}
+.embed #p-caesar .strip .bot{opacity:1}
+.embed #p-break{display:grid;grid-template-columns:minmax(0,370px) minmax(0,1fr);grid-template-rows:auto 1fr;gap:10px}
+.embed #p-break>.card:nth-child(1){grid-column:1;grid-row:1}
+.embed #p-break>.card:nth-child(2){grid-column:2;grid-row:1/span 2}
+.embed #p-break>.card:nth-child(3){grid-column:1;grid-row:2}
+.embed #p-zip{display:grid;grid-template-columns:minmax(0,370px) minmax(0,1fr);align-content:start;gap:10px}
+.embed #p-zip>.split{display:contents}
+.embed #p-zip>.split>.card:nth-child(1){grid-column:1;grid-row:1/span 2}
+.embed #p-zip>.split>.card:nth-child(2){grid-column:2;grid-row:1}
+.embed #p-zip>.card{grid-column:2;grid-row:2}
+.embed #p-unzip{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start;gap:10px}
+.embed #p-unzip>.split{display:contents}
+.embed #p-unzip>.card:nth-child(1){grid-column:1;grid-row:1}
+.embed #p-unzip>.split>.card:nth-child(1){grid-column:1;grid-row:2}
+.embed #p-unzip>.split>.card:nth-child(2){grid-column:2;grid-row:1}
+.embed #p-unzip>.card:last-child{grid-column:2;grid-row:2}
+.embed #p-unzip .muted{display:none}
+.embed #dTree{max-height:250px;width:100%}
+.embed #p-unzip .speed{display:none}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Тайна <span>частых букв</span></h1>
+    <p class="sub">Как математика помогает шифровать, взламывать и сжимать текст.</p>
+    <label class="lab">Алфавит <select id="lang"><option value="ru">Русский</option><option value="en">English</option><option value="et">Eesti</option></select></label>
+  </header>
+  <nav id="tabs" role="tablist" aria-label="Шаги урока"></nav>
+
+  <!-- Шифр Цезаря -->
+  <section class="panel" id="p-caesar">
+    <div class="split">
+      <div class="card">
+        <label class="lab" for="cPlain">Сообщение</label>
+        <textarea id="cPlain" spellcheck="false"></textarea>
+        <div class="big-slider">
+          <label class="lab" for="cKey">Ключ — на сколько букв сдвигаем</label>
+          <div class="row"><span class="keyval" id="cKeyV">3</span><input type="range" id="cKey" min="1" max="31" step="1" value="3"></div>
+        </div>
+        <div class="row"><button class="btn primary" type="button" id="cSend">Отправить на взлом →</button></div>
+      </div>
+      <div class="card">
+        <h2>Шифр Цезаря</h2>
+        <p class="muted">Каждую букву заменяем на ту, что стоит на <b class="gold" id="cKeyN">3</b> места дальше по алфавиту. Так Юлий Цезарь писал своим генералам больше 2000 лет назад.</p>
+        <div class="scroll"><div class="strip" id="cStrip"></div></div>
+        <h3>Шифровка</h3>
+        <p class="cipher" id="cOut"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Взлом -->
+  <section class="panel" id="p-break" hidden>
+    <div class="card">
+      <div class="ctlrow"><label class="lab" for="bSrc">Что взламываем</label><select id="bSrc"></select></div>
+      <label class="lab" for="bText">Шифровка</label>
+      <textarea id="bText" spellcheck="false" style="min-height:90px"></textarea>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>Сравниваем две диаграммы</h2>
+        <div class="legend"><span><i style="background:var(--line)"></i>обычный текст</span><span><i style="background:var(--gold)"></i>шифровка</span></div>
+      </div>
+      <div id="bChart" class="scroll"></div>
+      <div class="big-slider">
+        <label class="lab" for="bShift">Сдвигаем красную диаграмму назад</label>
+        <div class="row"><span class="keyval" id="bShiftV">0</span><input type="range" id="bShift" min="0" max="31" step="1" value="0"></div>
+      </div>
+      <div class="bars" id="bMatch"></div>
+      <p class="say" id="bSay"></p>
+    </div>
+    <div class="card">
+      <h3>Что получается при этом сдвиге</h3>
+      <p class="plain-out" id="bOut"></p>
+    </div>
+  </section>
+
+  <!-- 1. Частоты -->
+  <section class="panel" id="p-freq" hidden>
+    <div class="split">
+      <div class="card">
+        <label class="lab" for="t1">Текст</label>
+        <textarea id="t1" spellcheck="false"></textarea>
+        <div class="row presets"></div>
+        <p class="facts" id="facts1"></p>
+      </div>
+      <div class="card">
+        <h2>Сколько раз встречается каждая буква</h2>
+        <div id="hist" class="scroll"></div>
+        <p class="muted">Мода — самая частая буква. Именно она получит самый короткий код. Большие и маленькие буквы считаем одинаковыми, пробел показан как ␣.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Дерево -->
+  <section class="panel" id="p-tree" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2 id="treeTitle">Строим дерево</h2>
+        <div class="row">
+          <button class="btn ghost" type="button" id="tBack">← Назад</button>
+          <button class="btn primary" type="button" id="tNext">Шаг →</button>
+          <button class="btn" type="button" id="tAll">Всё дерево</button>
+          <button class="btn ghost" type="button" id="tReset">Сначала</button>
+        </div>
+      </div>
+      <div class="row presets"></div>
+      <p class="say" id="treeSay"></p>
+      <div class="scroll"><svg class="tree" id="treeSvg" aria-label="Дерево Хаффмана"></svg></div>
+    </div>
+    <div class="split">
+      <div class="card">
+        <h2>Правило одно</h2>
+        <ol class="steps">
+          <li>Каждая буква — листочек с числом: сколько раз она встречается.</li>
+          <li>Берём <b>две самые редкие</b> и склеиваем в узел. Число узла — их сумма.</li>
+          <li>Повторяем, пока не останется одно дерево.</li>
+          <li>Код буквы — путь от верха до неё: <b>налево 0</b>, <b>направо 1</b>.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h2>Почему так выгодно</h2>
+        <p class="muted">Редкие буквы склеиваются первыми и уходят глубоко вниз — их путь длинный. Частые остаются наверху — их путь короткий. Ни один код не является началом другого, поэтому разделители между буквами не нужны.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Сжатие -->
+  <section class="panel" id="p-zip" hidden>
+    <div class="split">
+      <div class="card">
+        <label class="lab" for="t3">Напишите текст</label>
+        <textarea id="t3" spellcheck="false"></textarea>
+        <div class="row presets"></div>
+        <div class="row"><button class="btn primary" type="button" id="zPlay">Сжать по буквам</button></div>
+        <h3>Сколько бит занимает</h3>
+        <div class="bars" id="bars"></div>
+        <p class="saving" id="saving"></p>
+      </div>
+      <div class="card">
+        <h2>Сжатый текст</h2>
+        <p class="source" id="src"></p>
+        <div class="chips" id="chips"></div>
+        <h3>Так это лежит в памяти компьютера</h3>
+        <p class="stream" id="stream"></p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Словарь для расшифровки</h2>
+      <p class="muted">Без словаря нули и единицы ничего не значат. Поэтому сжатый файл всегда хранит словарь в начале.</p>
+      <div class="dict" id="dict3"></div>
+    </div>
+  </section>
+
+  <!-- 4. Расшифровка -->
+  <section class="panel" id="p-unzip" hidden>
+    <div class="card">
+      <div class="ctlrow">
+        <label class="lab" for="dSrc">Что расшифровываем</label>
+        <select id="dSrc"></select>
+      </div>
+      <label class="lab" for="bits">Сжатый текст — можно изменить</label>
+      <textarea id="bits" class="bits" spellcheck="false" style="min-height:70px"></textarea>
+      <div class="ctlrow">
+        <div class="row">
+          <button class="btn ghost" type="button" id="dReset">Сначала</button>
+          <button class="btn" type="button" id="dBit">+1 бит</button>
+          <button class="btn" type="button" id="dLet">+1 буква</button>
+          <button class="btn primary" type="button" id="dPlay">Играть</button>
+        </div>
+        <label class="speed" for="dSpeed">медленно <input type="range" id="dSpeed" min="1" max="12" step="1" value="3"> быстро</label>
+      </div>
+    </div>
+    <div class="split wide-r">
+      <div class="card">
+        <h3>Биты</h3>
+        <div class="cells" id="cells"></div>
+        <p class="reading" id="reading"></p>
+        <h3>Расшифровано</h3>
+        <p class="out" id="out"></p>
+      </div>
+      <div class="card">
+        <h2>Словарь</h2>
+        <p class="muted">Читаем биты по одному. Неподходящие коды гаснут, пока не останется один.</p>
+        <div class="dict" id="dict4"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Тот же путь по дереву</h2>
+      <p class="muted">0 — шаг налево, 1 — направо. Дошли до буквы — записываем её и возвращаемся наверх.</p>
+      <div class="scroll"><svg class="tree" id="dTree" aria-label="Путь по дереву"></svg></div>
+    </div>
+  </section>
+
+  <!-- 5. Где используется -->
+  <section class="panel" id="p-where" hidden>
+    <div class="uses">
+      <div class="use"><span class="k">I век до н. э.</span><h2>Шифр Цезаря</h2><p>Юлий Цезарь сдвигал каждую букву на 3 места по алфавиту. Враг видел бессмыслицу, а генерал сдвигал обратно и читал приказ.</p></div>
+      <div class="use"><span class="k">IX век</span><h2>Аль-Кинди</h2><p>Учёный из Багдада заметил: в любом языке одни буквы частые, другие редкие. Посчитал буквы в шифровке — и взломал её. Это первый частотный анализ.</p></div>
+      <div class="use"><span class="k">1932–1945</span><h2>Энигма</h2><p>Немецкая шифровальная машина. Её взломали математики: сначала поляк Мариан Реевский, потом Алан Тьюринг в Англии. Историки считают, что это сократило войну.</p></div>
+      <div class="use"><span class="k">XIX век</span><h2>Азбука Морзе</h2><p>Прадедушка идеи. Самые частые буквы получили самые короткие сигналы: Е — одна точка, Т — одно тире.</p></div>
+      <div class="use"><span class="k">1952 год</span><h2>Дэвид Хаффман</h2><p>Студент, который придумал этот код в курсовой работе вместо экзамена. Доказал, что короче побуквенного кода не бывает.</p></div>
+      <div class="use"><span class="k">.zip · .gz</span><h2>Архивы</h2><p>Алгоритм DEFLATE: сначала находит повторяющиеся куски текста, потом кодирует всё кодом Хаффмана.</p></div>
+      <div class="use"><span class="k">.png</span><h2>Картинки без потерь</h2><p>Тот же DEFLATE. Скриншоты и рисунки сжимаются, не теряя ни одной точки.</p></div>
+      <div class="use"><span class="k">.jpg</span><h2>Фотографии</h2><p>Последний шаг сжатия JPEG — код Хаффмана. Частые значения цвета получают короткие коды.</p></div>
+      <div class="use"><span class="k">.mp3</span><h2>Музыка</h2><p>MP3 тоже использует код Хаффмана, чтобы песня занимала меньше места в телефоне.</p></div>
+    </div>
+    <div class="card">
+      <h2>Морзе: частые буквы короче</h2>
+      <div class="morse">
+        <div><b>Е</b><span>·</span></div>
+        <div><b>Т</b><span>−</span></div>
+        <div><b>А</b><span>·−</span></div>
+        <div><b>И</b><span>··</span></div>
+        <div><b>О</b><span>−−−</span></div>
+        <div><b>Щ</b><span>−−·−</span></div>
+        <div><b>Ю</b><span>··−−</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const disp=c=>c===' '?'␣':c==='\n'?'↵':c==='\t'?'⇥':c;
+const LIGHT=document.documentElement.classList.contains('light');
+const col=i=>'hsl('+Math.round((i*137.508+38)%360)+(LIGHT?' 72% 38%)':' 85% 66%)');
+const plural=(n,a)=>{const m10=n%10,m100=n%100;return a[m10===1&&m100!==11?0:m10>=2&&m10<=4&&(m100<12||m100>14)?1:2]};
+const times=n=>n+' '+plural(n,['раз','раза','раз']);
+const num=x=>x.toLocaleString('ru-RU',{maximumFractionDigits:1});
+
+/* ---------- модель: частоты и дерево Хаффмана ---------- */
+function build(t){
+  const chars=[...t.toLowerCase().replace(/\r/g,'')];
+  const byCh=new Map();
+  chars.forEach(c=>{if(!byCh.has(c))byCh.set(c,{ch:c,count:0,ord:byCh.size,leaf:true});byCh.get(c).count++});
+  const leaves=[...byCh.values()];
+  const sorted=leaves.slice().sort((a,b)=>b.count-a.count||a.ord-b.ord);
+  sorted.forEach((l,i)=>{l.rank=i;l.color=col(i)});
+  const merges=[],pool=leaves.slice(),cmp=(a,b)=>a.count-b.count||a.ord-b.ord;
+  let k=0;
+  while(pool.length>1){pool.sort(cmp);const a=pool.shift(),b=pool.shift();
+    const p={count:a.count+b.count,left:a,right:b,ord:1000+k,leaf:false};merges.push({a,b,p});pool.push(p);k++}
+  const root=pool[0]||null;
+  if(root){if(root.leaf)root.code='0';else(function walk(n,c){if(n.leaf){n.code=c;return}walk(n.left,c+'0');walk(n.right,c+'1')})(root,'')}
+  const modes=sorted.filter(l=>l.count===(sorted[0]||{}).count);
+  const total=chars.reduce((s,c)=>s+byCh.get(c).code.length,0);
+  return{chars,byCh,leaves,sorted,merges,root,modes,total};
+}
+const encode=m=>m.chars.map(c=>m.byCh.get(c).code).join('');
+
+/* ---------- общий текст ---------- */
+const PRESETS=[['абракадабра','абракадабра'],['мама мыла раму','мама мыла раму'],['Таллинн','таллинн — столица эстонии'],['Старый Томас','старый томас охраняет старый город']];
+let text='абракадабра',model=build(text),treeStep=0,decDirty=true;
+function setText(t,from){
+  text=t;model=build(t);treeStep=0;decDirty=true;
+  ['t1','t3'].forEach(id=>{const e=$('#'+id);if(e!==from&&e.value!==t)e.value=t});
+  stopZip();renderFreq();renderTree();renderZip();
+  if(dSrc==='zip'&&cur==='unzip')initDecode();
+}
+['t1','t3'].forEach(id=>{const e=$('#'+id);e.value=text;e.addEventListener('input',()=>setText(e.value,e))});
+$$('.presets').forEach(box=>PRESETS.forEach(([name,t])=>{const b=document.createElement('button');b.type='button';b.className='btn ghost';b.textContent=name;b.addEventListener('click',()=>setText(t));box.appendChild(b)}));
+
+/* ---------- 1. частоты ---------- */
+function renderFreq(){
+  const m=model,f=$('#facts1');
+  if(!m.root){f.textContent='Текста пока нет.';renderHist();return}
+  const ms=m.modes,c=ms[0].count;
+  f.innerHTML='Всего символов: <b>'+m.chars.length+'</b> · разных: <b>'+m.leaves.length+'</b><br>'+
+    (ms.length===1?'Мода: <b>«'+esc(disp(ms[0].ch))+'»</b> — '+times(c)
+      :'Моды: '+ms.map(x=>'<b>«'+esc(disp(x.ch))+'»</b>').join(', ')+' — по '+times(c));
+  renderHist();
+}
+function renderHist(){
+  const box=$('#hist'),m=model;
+  if(!m.root){box.innerHTML='<p class="empty">Напишите текст — здесь появится гистограмма.</p>';return}
+  const n=m.sorted.length,cw=box.clientWidth||700;
+  const padL=40,padR=8,padT=40,padB=40,W=Math.max(cw,padL+padR+n*30),H=Math.max(240,Math.min(380,Math.round(cw*.45)));
+  const max=m.sorted[0].count,raw=max/5,mag=Math.pow(10,Math.floor(Math.log10(Math.max(raw,1e-9))));
+  let step=[1,2,5,10].map(s=>s*mag).find(s=>s>=raw);step=Math.max(1,Math.round(step));
+  const top=Math.ceil(max/step)*step,ih=H-padT-padB,bw=(W-padL-padR)/n,Y=v=>padT+ih-ih*v/top;
+  let s='';
+  for(let v=0;v<=top;v+=step)s+=`<line class="gl" x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${padL-8}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle">${v}</text>`;
+  m.sorted.forEach((l,i)=>{
+    const x=padL+i*bw+bw*.14,w=bw*.72,y=Y(l.count),isMode=l.count===max;
+    s+=`<rect x="${x}" y="${y}" width="${w}" height="${padT+ih-y}" rx="${Math.min(5,w/4)}" fill="${l.color}"/>`;
+    s+=`<text class="bc" x="${x+w/2}" y="${y-6}" text-anchor="middle">${l.count}</text>`;
+    if(isMode)s+=`<text class="mt" x="${x+w/2}" y="${y-24}" text-anchor="middle">мода</text>`;
+    s+=`<text class="bl" x="${x+w/2}" y="${H-padB+22}" text-anchor="middle" fill="${l.color}">${esc(disp(l.ch))}</text>`;
+  });
+  box.innerHTML=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Гистограмма частот букв">${s}</svg>`;
+}
+
+/* ---------- рисуем дерево ---------- */
+function drawTree(svg,roots,o){
+  o=o||{};const all=[];let x=0,maxD=0;
+  const lay=(n,d)=>{n._d=d;maxD=Math.max(maxD,d);all.push(n);if(n.leaf){n._x=x;x+=1;return}lay(n.left,d+1);lay(n.right,d+1);n._x=(n.left._x+n.right._x)/2};
+  roots.forEach((r,i)=>{if(i)x+=.45;lay(r,0)});
+  const U=58,LH=76,pad=26,w=Math.max(1,x)*U+pad*2,h=maxD*LH+pad*2+(o.codes?82:62);
+  const X=n=>pad+U/2+n._x*U,Y=n=>pad+24+n._d*LH;
+  let e='',nd='';
+  all.forEach(n=>{if(n.leaf)return;[[n.left,'0',-1],[n.right,'1',1]].forEach(([c,b,sg])=>{
+    const hi=o.edges&&o.edges.has(c)?' hi':'';
+    e+=`<line class="edge${hi}" x1="${X(n)}" y1="${Y(n)}" x2="${X(c)}" y2="${Y(c)}"/>`;
+    e+=`<text class="elab${hi}" x="${(X(n)+X(c))/2+sg*11}" y="${(Y(n)+Y(c))/2-4}" text-anchor="middle" dominant-baseline="middle">${b}</text>`})});
+  all.forEach(n=>{
+    const cx=X(n),cy=Y(n),m=o.merge&&o.merge.has(n)?' m':'',hi=o.nodes&&o.nodes.has(n)?' hi':'';
+    if(n.leaf){
+      nd+=`<rect class="lnode${hi}${m}" x="${cx-21}" y="${cy-22}" width="42" height="44" rx="9" stroke="${n.color}"/>`+
+        `<text class="lch" x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle" fill="${n.color}">${esc(disp(n.ch))}</text>`+
+        `<text class="lcnt" x="${cx}" y="${cy+38}" text-anchor="middle">×${n.count}</text>`+
+        (o.codes?`<text class="lcode" x="${cx}" y="${cy+57}" text-anchor="middle" fill="${n.color}">${n.code}</text>`:'');
+    }else{
+      const fill=(o.cur===n?' cur':'')+(o.fresh===n?' new':'');
+      nd+=`<circle class="inode${hi}${m}${fill}" cx="${cx}" cy="${cy}" r="17"/><text class="icnt${fill?' dark':''}" x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle">${n.count}</text>`;
+    }});
+  svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.setAttribute('width',w);svg.setAttribute('height',h);svg.innerHTML=e+nd;
+}
+
+/* ---------- 2. дерево по шагам ---------- */
+const nm=n=>n.leaf?'«'+esc(disp(n.ch))+'» ('+n.count+')':'узел '+n.count;
+function forestAt(s){let f=model.sorted.slice();for(let i=0;i<s;i++){const{a,b,p}=model.merges[i];f=f.filter(n=>n!==a&&n!==b);f.push(p)}
+  return f.sort((x,y)=>y.count-x.count||x.ord-y.ord)}
+function renderTree(){
+  const m=model,svg=$('#treeSvg'),say=$('#treeSay'),N=m.merges.length;
+  const q=text.length>48?text.slice(0,48)+'…':text;
+  $('#treeTitle').textContent=m.root?'Дерево для «'+q+'»':'Строим дерево';
+  $('#tBack').disabled=treeStep<=0;$('#tNext').disabled=treeStep>=N;$('#tAll').disabled=treeStep>=N;
+  if(!m.root){svg.innerHTML='';svg.setAttribute('width',0);svg.setAttribute('height',0);say.textContent='Напишите текст во вкладке «Частоты и мода» или «Сжатие».';return}
+  const next=treeStep<N?m.merges[treeStep]:null,fresh=treeStep>0?m.merges[treeStep-1].p:null;
+  const done=treeStep>=N;
+  drawTree(svg,forestAt(treeStep),{merge:next?new Set([next.a,next.b]):null,fresh:done?null:fresh,codes:done});
+  if(N===0)say.innerHTML='В тексте одна буква — ей хватит кода <b>0</b>.';
+  else if(treeStep===0)say.innerHTML='Каждая буква — отдельный листочек, число под ним — сколько раз она встречается. Первыми склеим две самые редкие: '+nm(next.a)+' и '+nm(next.b)+'.';
+  else if(!done){const pr=m.merges[treeStep-1];say.innerHTML='Шаг '+treeStep+' из '+N+': склеили '+nm(pr.a)+' и '+nm(pr.b)+' → <b>узел '+pr.p.count+'</b>. Следующими склеим '+nm(next.a)+' и '+nm(next.b)+'.';}
+  else say.innerHTML='Дерево готово за '+N+' '+plural(N,['шаг','шага','шагов'])+'! Код буквы — путь сверху: <b>налево 0, направо 1</b>. Он подписан под каждой буквой.';
+}
+$('#tNext').addEventListener('click',()=>{treeStep=Math.min(model.merges.length,treeStep+1);renderTree()});
+$('#tBack').addEventListener('click',()=>{treeStep=Math.max(0,treeStep-1);renderTree()});
+$('#tAll').addEventListener('click',()=>{treeStep=model.merges.length;renderTree()});
+$('#tReset').addEventListener('click',()=>{treeStep=0;renderTree()});
+
+/* ---------- словарь ---------- */
+function dictHTML(m,prefix,found){
+  return m.sorted.map(l=>{
+    let cls='';if(prefix&&!l.code.startsWith(prefix))cls=' dim';if(found===l)cls=' found';
+    const code=prefix&&!cls?'<u>'+l.code.slice(0,prefix.length)+'</u>'+l.code.slice(prefix.length):l.code;
+    const mode=l.count===m.sorted[0].count?'<em>мода</em>':'';
+    return `<div class="entry${cls}" style="--c:${l.color}"><span class="l">${esc(disp(l.ch))}</span><span class="code">${code}</span><span class="cnt">${times(l.count)}${mode}</span></div>`;
+  }).join('');
+}
+
+/* ---------- 3. сжатие ---------- */
+let zipReveal=Infinity,zipAnim=false,zipTimer=null;
+function renderZip(){
+  const m=model;
+  if(!m.root){$('#src').innerHTML='';$('#chips').innerHTML='<p class="empty">Напишите текст слева — здесь появится его код.</p>';
+    $('#stream').innerHTML='';$('#dict3').innerHTML='';$('#bars').innerHTML='';$('#saving').textContent='';return}
+  const lim=Math.min(zipReveal,m.chars.length);
+  $('#src').innerHTML=m.chars.map((c,i)=>`<span class="${i<lim?'done':''}${zipAnim&&i===lim-1?' now':''}" style="--c:${m.byCh.get(c).color}">${esc(disp(c))}</span>`).join('');
+  $('#chips').innerHTML=m.chars.slice(0,lim).map((c,i)=>{const l=m.byCh.get(c);
+    return `<div class="chip${zipAnim&&i===lim-1?' pop':''}" style="--c:${l.color}"><span class="ch">${esc(disp(c))}</span><span class="bits">${l.code}</span></div>`}).join('');
+  $('#stream').innerHTML=m.chars.slice(0,lim).map(c=>{const l=m.byCh.get(c);return `<span style="--c:${l.color}">${l.code}</span>`}).join('')||'&nbsp;';
+  const n=m.chars.length,k=m.leaves.length,fb=k<2?1:Math.ceil(Math.log2(k)),plain=8*n,fixed=fb*n,h=m.total;
+  const bar=(lbl,v,c)=>`<div class="bar" style="--c:${c}"><span class="lbl">${lbl}</span><span class="val">${v} бит</span><div class="track"><div class="fill" style="width:${Math.max(.5,100*v/plain)}%"></div></div></div>`;
+  $('#bars').innerHTML=bar('Обычно: 8 бит на каждую букву',plain,'var(--muted)')+
+    bar('Равный код: '+fb+' '+plural(fb,['бит','бита','бит'])+' на букву ('+k+' '+plural(k,['буква','буквы','букв'])+')',fixed,'var(--sky)')+
+    bar('Код Хаффмана: в среднем '+num(h/n)+' бита',h,'var(--leaf)');
+  $('#saving').textContent='Код Хаффмана в '+num(plain/h)+' раза короче обычного';
+  $('#dict3').innerHTML=dictHTML(m);
+}
+function stopZip(){clearInterval(zipTimer);zipTimer=null;zipAnim=false;zipReveal=Infinity}
+$('#zPlay').addEventListener('click',()=>{
+  stopZip();if(!model.root)return;
+  if(reduce){renderZip();return}
+  zipAnim=true;zipReveal=0;renderZip();
+  zipTimer=setInterval(()=>{zipReveal++;if(zipReveal>=model.chars.length){clearInterval(zipTimer);zipTimer=null;renderZip();zipAnim=false;return}renderZip()},550);
+});
+
+/* ---------- 4. расшифровка ---------- */
+const PUZ=[{id:'p1',name:'Загадка 1',text:'математика'},{id:'p2',name:'Загадка 2',text:'старый томас'},{id:'p3',name:'Загадка 3',text:'компьютер любит математику'}];
+let dSrc='p1',dModel=null,dBits='',d=null,dTimer=null,dHold=0;
+const sel=$('#dSrc');
+PUZ.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)});
+{const o=document.createElement('option');o.value='zip';o.textContent='Текст из вкладки «Сжатие»';sel.appendChild(o)}
+sel.value=dSrc;
+sel.addEventListener('change',()=>{dSrc=sel.value;initDecode()});
+function initDecode(){
+  const t=dSrc==='zip'?text:PUZ.find(p=>p.id===dSrc).text;
+  dModel=build(t);dBits=encode(dModel);$('#bits').value=dBits;decDirty=false;resetDec();
+}
+function resetDec(){stopDec();d={pos:0,node:dModel.root,gStart:0,out:[],err:-1,last:null,fresh:false};renderDec()}
+function stepBit(){
+  const m=dModel;d.fresh=false;
+  if(!m.root||d.err>=0||d.pos>=dBits.length)return null;
+  const b=dBits[d.pos];let found=null;
+  if(m.root.leaf){if(b!=='0'){d.err=d.pos;return null}found=m.root;d.pos++}
+  else{d.node=b==='0'?d.node.left:d.node.right;d.pos++;if(d.node.leaf)found=d.node}
+  if(found){d.out.push({leaf:found,start:d.gStart,end:d.pos});d.gStart=d.pos;d.node=m.root;d.last=found;d.fresh=true}
+  else d.last=null;
+  return found;
+}
+function stepLetter(){while(d.pos<dBits.length&&d.err<0){if(stepBit())break}}
+function stopDec(){clearInterval(dTimer);dTimer=null;$('#dPlay').textContent='Играть'}
+function playDec(){
+  if(dTimer){stopDec();return}
+  if(d.pos>=dBits.length||d.err>=0)resetDec();
+  $('#dPlay').textContent='Пауза';
+  const spd=+$('#dSpeed').value;
+  dTimer=setInterval(()=>{
+    if(dHold>0){dHold--;return}
+    if(d.pos>=dBits.length||d.err>=0){stopDec();renderDec();return}
+    if(stepBit())dHold=Math.max(1,Math.round(spd/2));
+    renderDec();
+  },1000/spd);
+}
+$('#dReset').addEventListener('click',resetDec);
+$('#dBit').addEventListener('click',()=>{stopDec();stepBit();renderDec()});
+$('#dLet').addEventListener('click',()=>{stopDec();stepLetter();renderDec()});
+$('#dPlay').addEventListener('click',playDec);
+$('#dSpeed').addEventListener('input',()=>{if(dTimer){stopDec();playDec()}});
+$('#bits').addEventListener('input',e=>{
+  const v=e.target.value.replace(/[^01]/g,'');if(v!==e.target.value)e.target.value=v;
+  dBits=v;resetDec();
+});
+function renderDec(){
+  const m=dModel,cells=$('#cells');
+  if(!m.root){cells.innerHTML='';$('#reading').textContent='Нет словаря: во вкладке «Сжатие» пустой текст.';$('#out').innerHTML='';$('#dict4').innerHTML='';drawTree($('#dTree'),[],{});return}
+  const grp=new Array(dBits.length).fill(null);
+  d.out.forEach(g=>{for(let i=g.start;i<g.end;i++)grp[i]=g});
+  cells.innerHTML=[...dBits].map((b,i)=>{
+    const g=grp[i];let cls='cell',st='';
+    if(g){cls+=' dec';st=` style="--c:${g.leaf.color}"`;if(i===g.start&&i>0)cls+=' gs'}
+    else if(i>=d.gStart&&i<d.pos){cls+=' pre';if(i===d.gStart&&i>0)cls+=' gs'}
+    else if(i===d.pos&&d.gStart===d.pos&&i>0)cls+=' gs';
+    if(i===d.err)cls+=' bad';
+    if(i===d.pos&&!dTimer&&d.err<0)cls+=' ptr';
+    if(i===d.pos&&dTimer)cls+=' ptr';
+    return `<span class="${cls}"${st}>${b}</span>`}).join('')||'<span class="empty">Битов нет</span>';
+  const prefix=dBits.slice(d.gStart,d.pos);
+  const cand=prefix?m.sorted.filter(l=>l.code.startsWith(prefix)):[];
+  let r;
+  if(d.err>=0)r='Бит <b>1</b> не подходит: в словаре только код <b>0</b>.';
+  else if(prefix)r='Читаю: <b>'+prefix+'</b> — подходят: '+cand.map(l=>'«'+esc(disp(l.ch))+'»').join(', ');
+  else if(d.pos>=dBits.length&&dBits.length)r='Готово! Расшифровано '+d.out.length+' '+plural(d.out.length,['буква','буквы','букв'])+'.';
+  else if(d.last)r='Нашли <b>«'+esc(disp(d.last.ch))+'»</b> — код '+'<b>'+d.last.code+'</b>. Начинаем следующую букву.';
+  else r='Нажмите «+1 бит», «+1 буква» или «Играть».';
+  if(d.pos>=dBits.length&&prefix)r='Биты закончились посреди буквы: <b>'+prefix+'</b> — не хватает битов.';
+  $('#reading').innerHTML=r;
+  $('#out').innerHTML=d.out.map((g,i)=>`<span class="${d.fresh&&i===d.out.length-1?'new':''}" style="--c:${g.leaf.color}">${esc(disp(g.leaf.ch))}</span>`).join('')+(d.pos<dBits.length?'<span class="cur">&nbsp;</span>':'');
+  $('#dict4').innerHTML=dictHTML(m,prefix,prefix?null:(d.fresh?d.last:null));
+  const path=prefix||(d.fresh&&d.last?d.last.code:'');
+  const nodes=new Set([m.root]),edges=new Set();let n=m.root;
+  if(!m.root.leaf)for(const b of path){n=b==='0'?n.left:n.right;nodes.add(n);edges.add(n)}
+  drawTree($('#dTree'),[m.root],{nodes:path?nodes:null,edges,cur:prefix?n:null,codes:true});
+}
+
+/* ---------- шифр Цезаря ---------- */
+/* ---------- языки ---------- */
+// ref — частоты букв, %: ru — таблица для русского текста, en — Wikipedia «Letter frequency» (колонка Texts),
+// et — посчитано по ~47 000 букв статей et.wikipedia.org. ciph — [текст, ключ] для вкладки «Взлом».
+const LANGS={
+  ru:{al:'абвгдежзийклмнопрстуфхцчшщъыьэюя',norm:t=>t.toLowerCase().replace(/ё/g,'е'),mode:'о',msg:'встречаемся у старой ратуши в полдень',
+    ref:{а:8.01,б:1.59,в:4.54,г:1.70,д:2.98,е:8.49,ж:0.94,з:1.65,и:7.35,й:1.21,к:3.49,л:4.40,м:3.21,н:6.70,о:10.97,п:2.81,р:4.73,с:5.47,т:6.26,у:2.62,ф:0.26,х:0.97,ц:0.48,ч:1.44,ш:0.73,щ:0.36,ъ:0.04,ы:1.90,ь:1.74,э:0.32,ю:0.64,я:2.01},
+    ciph:[['о чём говорит море около города? оно говорит о кораблях, о долгой дороге домой и о том, что хороший математик сильнее любого шифра.',10],
+      ['старый томас стоит на шпиле ратуши и охраняет город. он смотрит на море, на корабли и на крыши домов. ночью он считает звёзды, а утром снова смотрит на родной город.',3],
+      ['один умный человек заметил: в любом тексте одни буквы встречаются очень часто, а другие почти никогда. больше всего букв о. кто построит диаграмму, тот откроет любой шифр цезаря.',5]]},
+  en:{al:'abcdefghijklmnopqrstuvwxyz',norm:t=>t.toLowerCase(),mode:'e',msg:'meet me at the old town hall at noon',
+    ref:{a:8.2,b:1.5,c:2.8,d:4.3,e:12.7,f:2.2,g:2.0,h:6.1,i:7.0,j:0.16,k:0.77,l:4.0,m:2.4,n:6.7,o:7.5,p:1.9,q:0.12,r:6.0,s:6.3,t:9.1,u:2.8,v:0.98,w:2.4,x:0.15,y:2.0,z:0.07},
+    ciph:[['the sea keeps telling the whole city the same secret: every letter in every sentence repeats, and the letter e repeats more than the rest. whoever remembers the pattern can read the secret without the key.',10],
+      ['the old tower keeps the keys of the green harbour and the tall gate. every evening the keeper climbs the steps, lets the bell ring seven times, and then he sleeps near the fire.',3],
+      ['a clever person once noticed that in every text some letters appear very often and others almost never. most of all there are the letters e and t. whoever draws the chart will break any caesar cipher.',5]]},
+  et:{al:'abcdefghijklmnopqrsšzžtuvwõäöüxy',norm:t=>t.toLowerCase(),mode:'a',msg:'kohtume vanas raekojas keskpäeval',
+    ref:{a:12.91,b:0.63,c:0.09,d:3.65,e:10.78,f:0.15,g:1.74,h:1.48,i:10.46,j:1.91,k:4.38,l:6.04,m:3.44,n:4.61,o:3.7,p:1.63,q:0.01,r:3.76,s:9.9,š:0.01,z:0.01,ž:0.01,t:7.49,u:5.74,v:2.45,w:0.04,õ:1.06,ä:1.21,ö:0.17,ü:0.52,x:0.01,y:0.01},
+    ciph:[['mida räägib meri linnale? ta räägib alati laevadest, pikast teest koju ja sellest, et hea matemaatik on alati tugevam kui iga salakiri.',10],
+      ['vana toomas seisab raekoja tipus ja valvab linna. ta vaatab merele, laevadele ja majade katustele. öösel loeb ta tähti ja hommikul vaatab jälle oma kodulinna.',3],
+      ['kaks tähte kordub tekstis kõige sagedamini. kes arvab ära, kus asub kõige sagedam täht, see saab kätte salakirja kogu saladuse. vana kalamees tegi samamoodi: ta vaatas lainetele ja aimas ära, kus kala kala varjab.',5]]}
+};
+let AL,N,REF,normC,MODE;
+const shiftT=(t,k)=>[...normC(t)].map(c=>{const i=AL.indexOf(c);return i<0?c:AL[((i+k)%N+N)%N]}).join('');
+let cKey=3;
+const cPlain=$('#cPlain');
+function renderCaesar(){
+  $('#cKeyV').textContent=cKey;$('#cKeyN').textContent=cKey;
+  const used=new Set([...normC(cPlain.value)]);
+  $('#cStrip').style.gridTemplateColumns='repeat('+N+',minmax(0,1fr))';
+  $('#cStrip').innerHTML=[...AL].map(c=>`<span class="top${used.has(c)?' u':''}">${c}</span>`).join('')+
+    [...AL].map((c,i)=>`<span class="bot${used.has(c)?' u':''}">${AL[(i+cKey)%N]}</span>`).join('');
+  $('#cOut').textContent=shiftT(cPlain.value,cKey)||'—';
+}
+cPlain.addEventListener('input',renderCaesar);
+$('#cKey').addEventListener('input',e=>{cKey=+e.target.value;renderCaesar()});
+
+/* ---------- взлом по диаграмме ---------- */
+const SN=['Шифровка 1 (легче)','Шифровка 2','Шифровка 3 (труднее)'];
+let CIPH=[],bSrc='s1',bShift=0,bCustom='';
+const bSrcSel=$('#bSrc'),bText=$('#bText');
+function setLang(l){
+  const L=LANGS[l];AL=L.al;N=AL.length;REF=L.ref;normC=L.norm;MODE=L.mode;$('#lang').value=l;
+  cKey=Math.min(cKey,N-1);$('#cKey').max=$('#bShift').max=N-1;$('#cKey').value=cKey;
+  cPlain.value=L.msg;
+  CIPH=L.ciph.map((c,i)=>({id:'s'+(i+1),name:SN[i],plain:c[0],key:c[1],text:shiftT(c[0],c[1])}));
+  bSrcSel.innerHTML='';
+  CIPH.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;bSrcSel.appendChild(o)});
+  {const o=document.createElement('option');o.value='own';o.textContent='Своя шифровка';bSrcSel.appendChild(o)}
+  bSrc='s1';bShift=0;bCustom='';$('#bShift').value=0;bSrcSel.value=bSrc;bText.value=CIPH[0].text;
+}
+{const q=new URLSearchParams(location.search).get('lang');setLang(LANGS[q]?q:'ru')}
+{const q=new URLSearchParams(location.search).get('c');if(q&&CIPH.some(c=>c.id===q)){bSrc=q;bSrcSel.value=q;bText.value=CIPH.find(c=>c.id===q).text}}
+$('#lang').addEventListener('change',e=>{setLang(e.target.value);renderCaesar();renderBreak()});
+function setShift(k){bShift=k;$('#bShift').value=k}
+bSrcSel.addEventListener('change',()=>{bSrc=bSrcSel.value;bText.value=bSrc==='own'?bCustom:CIPH.find(c=>c.id===bSrc).text;setShift(0);renderBreak()});
+bText.addEventListener('input',()=>{if(bSrc!=='own'){bSrc='own';bSrcSel.value='own'}bCustom=bText.value;renderBreak()});
+$('#bShift').addEventListener('input',e=>{bShift=+e.target.value;renderBreak()});
+$('#cSend').addEventListener('click',()=>{bCustom=shiftT(cPlain.value,cKey);bSrc='own';bSrcSel.value='own';bText.value=bCustom;setShift(0);show('break')});
+function cfreq(t){const f=new Array(N).fill(0);let n=0;for(const c of normC(t)){const i=AL.indexOf(c);if(i>=0){f[i]++;n++}}return{f:f.map(v=>n?100*v/n:0),n}}
+const overlap=(f,k)=>{let s=0;for(let i=0;i<N;i++)s+=Math.min(REF[AL[i]],f[(i+k)%N]);return s};
+function renderBreak(){
+  $('#bShiftV').textContent=bShift;
+  const t=bText.value,{f,n}=cfreq(t),box=$('#bChart');
+  $('#bOut').textContent=n?shiftT(t,-bShift):'';
+  if(!n){box.innerHTML='<p class="empty">Вставьте шифровку — появится её диаграмма.</p>';$('#bMatch').innerHTML='';$('#bSay').textContent='';return}
+  const dec=[...AL].map((c,i)=>f[(i+bShift)%N]);
+  const cw=box.clientWidth||800,W=Math.max(cw,N*22+50),H=Math.max(230,Math.min(340,Math.round(cw*.36)));
+  const padL=46,padR=6,padT=16,padB=56,ih=H-padT-padB,bw=(W-padL-padR)/N;
+  const mx=Math.max(11,...dec),step=mx>14?4:2,top=Math.ceil(mx/step)*step,Y=v=>padT+ih-ih*v/top;
+  let s='';
+  for(let v=0;v<=top;v+=step)s+=`<line class="gl" x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${padL-8}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle">${v}%</text>`;
+  [...AL].forEach((c,i)=>{
+    const x=padL+i*bw,r=REF[c],d=dec[i];
+    s+=`<rect x="${x+bw*.08}" y="${Y(r)}" width="${bw*.84}" height="${padT+ih-Y(r)}" rx="3" fill="var(--line)"/>`;
+    if(d>0)s+=`<rect x="${x+bw*.28}" y="${Y(d)}" width="${bw*.44}" height="${padT+ih-Y(d)}" rx="2" fill="var(--gold)"/>`;
+    s+=`<text class="bl" x="${x+bw/2}" y="${H-padB+20}" text-anchor="middle" fill="var(--fg)" style="font-size:15px">${c}</text>`;
+    s+=`<text class="bl" x="${x+bw/2}" y="${H-padB+42}" text-anchor="middle" fill="var(--gold)" style="font-size:13px">${AL[(i+bShift)%N]}</text>`;
+  });
+  s+=`<text class="ax" x="${padL-8}" y="${H-padB+20}" text-anchor="end" dominant-baseline="auto">текст</text><text class="ax" x="${padL-8}" y="${H-padB+42}" text-anchor="end" fill="var(--gold)">шифр</text>`;
+  box.innerHTML=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Диаграммы частот: обычный текст и шифровка">${s}</svg>`;
+  const ov=overlap(f,bShift);let best=0,bv=-1;for(let k=0;k<N;k++){const v=overlap(f,k);if(v>bv){bv=v;best=k}}
+  const win=bShift===best&&ov>=55;
+  $('#bMatch').innerHTML=`<div class="bar" style="--c:${win?'var(--leaf)':'var(--sky)'}"><span class="lbl">Похожесть на обычный текст</span><span class="val">${Math.round(ov)}%</span><div class="track"><div class="fill" style="width:${Math.min(100,ov)}%"></div></div></div>`;
+  let ti=0;for(let i=1;i<N;i++)if(f[i]>f[ti])ti=i;
+  const say=$('#bSay');say.classList.toggle('win',win);
+  say.innerHTML=win?'Диаграммы совпали! Ключ — <b>'+bShift+'</b>: каждую букву шифровки сдвигаем на '+bShift+' назад.'
+    :'Самая частая буква шифровки — <b>«'+AL[ti]+'»</b>. В обычном тексте самая частая — <b>«'+MODE+'»</b>. Двигайте ползунок, пока самый высокий жёлтый столбик не встанет над «'+MODE+'».';
+}
+
+/* ---------- вкладки ---------- */
+const TABS=[['caesar','Шифр Цезаря'],['freq','Частоты и мода'],['break','Взлом шифра'],['tree','Дерево Хаффмана'],['zip','Сжатие'],['unzip','Расшифровка'],['where','История']];
+let cur='';
+const nav=$('#tabs');
+TABS.forEach(([k,t])=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.id='tab-'+k;b.textContent=t;b.addEventListener('click',()=>show(k));nav.appendChild(b)});
+function show(k){
+  cur=k;
+  TABS.forEach(([x])=>{$('#p-'+x).hidden=x!==k;$('#tab-'+x).setAttribute('aria-selected',x===k?'true':'false')});
+  if(k==='freq')renderHist();
+  if(k==='break')renderBreak();
+  if(k==='unzip'&&dSrc==='zip'&&decDirty)initDecode();
+  if(k!=='unzip')stopDec();
+  try{history.replaceState(null,'','#'+k)}catch(e){}
+}
+new ResizeObserver(()=>{if(cur==='freq')renderHist()}).observe($('#hist'));
+new ResizeObserver(()=>{if(cur==='break')renderBreak()}).observe($('#bChart'));
+
+renderCaesar();renderFreq();renderTree();renderZip();initDecode();
+const h=(location.hash||'').slice(1);
+show(TABS.some(t=>t[0]===h)?h:'caesar');
+})();
+</script>
+</body>
+</html>
