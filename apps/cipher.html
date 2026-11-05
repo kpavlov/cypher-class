@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Тайна частых букв</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <script>["embed","light"].forEach(function(k){if(new RegExp("[?&]"+k+"\\b").test(location.search))document.documentElement.classList.add(k)})</script>
+<script>/* ?embed подстраивается под окно/iframe: раскладка рассчитана на 1280×720, дальше масштаб */
+if(/[?&]embed\b/.test(location.search)){var fit=function(){document.documentElement.style.zoom=Math.min(innerWidth/1280,innerHeight/720)};fit();addEventListener("resize",fit)}</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 /* сброс, который раньше добавляла оболочка артефакта */
@@ -47,7 +50,7 @@ button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-vis
 .panel{display:flex;flex-direction:column;gap:16px}
 .split{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:16px;align-items:start}
 .split.wide-r{grid-template-columns:minmax(0,1fr) minmax(0,400px)}
-@media (max-width:900px){.split,.split.wide-r{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){html:not(.embed) .split,html:not(.embed) .split.wide-r{grid-template-columns:minmax(0,1fr)}} /* в ?embed окно масштабируется, а не перестраивается */
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;
   display:flex;flex-direction:column;gap:14px;min-width:0}
 h2{font-family:var(--display);font-weight:500;font-size:19px;margin:0;text-wrap:balance}
@@ -169,6 +172,9 @@ svg.tree{display:block;margin-inline:auto;max-width:none}
 .reading{font-size:17px;min-height:1.6em}
 .reading b{color:var(--gold);font-family:var(--mono)}
 .ctlrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+/* форма — вертикальная стопка: подпись над полем, кнопки управления под заголовком карточки */
+.ctlrow:has(>label.lab){flex-direction:column;align-items:flex-start;gap:6px}
+#p-tree .row[style*="space-between"]{flex-direction:column;align-items:flex-start}
 .speed{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
 .speed input{accent-color:var(--gold);width:120px}
 
@@ -219,6 +225,8 @@ svg.tree{display:block;margin-inline:auto;max-width:none}
 .embed #p-break>.card:nth-child(1){grid-column:1;grid-row:1}
 .embed #p-break>.card:nth-child(2){grid-column:2;grid-row:1/span 2}
 .embed #p-break>.card:nth-child(3){grid-column:1;grid-row:2}
+.embed #treeSvg{max-height:450px;width:100%} /* самое глубокое дерево («Старый Томас») */
+.embed #p-tree>.split{display:none} /* правило и «почему выгодно» уже на соседних слайдах; без них дерево целиком влезает */
 .embed #p-zip{display:grid;grid-template-columns:minmax(0,370px) minmax(0,1fr);align-content:start;gap:10px}
 .embed #p-zip>.split{display:contents}
 .embed #p-zip>.split>.card:nth-child(1){grid-column:1;grid-row:1/span 2}
@@ -233,6 +241,20 @@ svg.tree{display:block;margin-inline:auto;max-width:none}
 .embed #p-unzip .muted{display:none}
 .embed #dTree{max-height:320px;width:100%}
 .embed #p-break .plain-out{font-size:21px;line-height:1.35}
+.embed #bText{min-height:126px;font:500 16px/1.35 var(--mono);padding-block:8px}
+/* на слайде место есть — крупнее (zoom, чтобы не трогать остальные размеры) */
+.embed #p-caesar{zoom:1.45} /* больше нельзя: полоса алфавита (32 буквы) перестанет влезать по ширине */
+.embed #p-caesar>.split{grid-template-columns:minmax(0,300px) minmax(0,1fr)}
+.embed #p-caesar .strip{min-width:500px}
+.embed #p-freq{zoom:1.45}
+/* самые длинные тексты («Старый Томас», «Загадка 3») должны влезать в 720px: плотнее словарь, биты и результат */
+.embed .dict{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.embed .entry{padding:5px 8px;gap:0 8px}
+.embed .entry .code{font-size:16px}
+.embed .entry .cnt em{display:block;margin:2px 0 0;width:max-content}
+.embed .cells{font-size:17px;gap:3px}
+.embed .cell.gs{margin-left:6px}
+.embed .out{font-size:26px}
 .embed #p-unzip .speed{display:none}
 </style>
 </head>
@@ -275,7 +297,7 @@ svg.tree{display:block;margin-inline:auto;max-width:none}
       <div class="ctlrow"><label class="lab" for="bLang">Язык</label><select id="bLang" class="lang"></select></div>
       <div class="ctlrow"><label class="lab" for="bSrc">Что взламываем</label><select id="bSrc"></select></div>
       <label class="lab" for="bText">Шифровка</label>
-      <textarea id="bText" spellcheck="false" style="min-height:90px"></textarea>
+      <textarea id="bText" spellcheck="false"></textarea>
     </div>
     <div class="card">
       <div class="row" style="justify-content:space-between">
@@ -755,7 +777,7 @@ function renderBreak(){
   if(!n){box.innerHTML='<p class="empty">Вставьте шифровку — появится её диаграмма.</p>';$('#bMatch').innerHTML='';$('#bSay').textContent='';return}
   const dec=[...AL].map((c,i)=>f[(i+bShift)%N]);
   const cw=box.clientWidth||800,W=Math.max(cw,N*22+50),H=Math.max(230,Math.min(340,Math.round(cw*.36)));
-  const padL=46,padR=6,padT=16,padB=56,ih=H-padT-padB,bw=(W-padL-padR)/N;
+  const padL=62,padR=6,padT=16,padB=56,ih=H-padT-padB,bw=(W-padL-padR)/N;
   const mx=Math.max(11,...dec),step=mx>14?4:2,top=Math.ceil(mx/step)*step,Y=v=>padT+ih-ih*v/top;
   let s='';
   for(let v=0;v<=top;v+=step)s+=`<line class="gl" x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${padL-8}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle">${v}%</text>`;

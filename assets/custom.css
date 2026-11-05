@@ -15,11 +15,12 @@
   --r-selection-color: #0f1b33;
 }
 .reveal .slides section { box-sizing: border-box; padding: 0 64px; }
-.reveal .slides section:has(iframe) { padding: 0; }
+.reveal .slides section:has(iframe) { padding: 0; top: 0 !important; }
 .reveal h1, .reveal h2, .reveal h3 { font-weight: 700; line-height: 1.15; }
 .reveal { line-height: 1.4; }
 .reveal h1 { font-size: 2.4em; }
 .reveal h2 { font-size: 1.75em; margin-bottom: 0.6em; }
+.reveal .dense h2 { font-size: 1.35em; margin-bottom: 0.3em; }
 .reveal strong, .reveal b { color: #9d1469; font-weight: 600; }
 .reveal ul, .reveal ol { display: block; text-align: left; margin-left: auto; margin-right: auto; width: fit-content; max-width: 100%; }
 .reveal li { margin: 0.25em 0; }
@@ -29,7 +30,8 @@
 .reveal pre code { max-height: none; padding: 0.6em 0.8em; background: #f3f6fb; border: 1px solid #b8c5dc; border-radius: 8px; color: #0f1b33; }
 .reveal blockquote { box-sizing: border-box; overflow-wrap: anywhere; width: 100%; box-shadow: none; background: #f3f6fb; border-left: 6px solid #9d1469; color: #0f1b33; padding: 0.6em 0.9em; text-align: left; font-style: normal; font-family: var(--r-code-font); font-size: 0.72em; line-height: 1.55; }
 .reveal blockquote p { margin: 0; }
-.reveal iframe.r-stretch { width: 100%; border: 1px solid #b8c5dc; border-radius: 10px; background: #ffffff; }
+/* демо во весь слайд (1280×720 из Reveal.initialize); !important — Reveal сам ставит r-stretch высоту «минус заголовок» */
+.reveal iframe.r-stretch { width: 1280px !important; height: 720px !important; border: 0; background: #ffffff; }
 .reveal code { color: #9d1469; }
 
 /* окно приложения («Отправить на расшифровку») — во весь экран, светлое */
