@@ -1,4 +1,5 @@
 PORT ?= 8000
+.DEFAULT_GOAL := start
 
 .PHONY: start
 start:
