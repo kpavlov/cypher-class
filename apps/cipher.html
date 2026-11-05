@@ -80,29 +80,29 @@ select{font:600 15px var(--body);color:var(--fg);background:var(--ink);border:1p
 /* гистограмма */
 #hist{min-height:200px}
 #hist svg{display:block}
-.ax{fill:var(--muted);font:12px var(--mono)}
+.ax{fill:var(--muted);font:16px var(--mono)}
 .gl{stroke:var(--grid);stroke-width:1}
 .bl{font:600 17px var(--mono)}
-.bc{fill:var(--fg);font:600 13px var(--mono)}
-.mt{fill:var(--gold);font:600 12px var(--body);letter-spacing:.06em}
+.bc{fill:var(--fg);font:600 16px var(--mono)}
+.mt{fill:var(--gold);font:600 16px var(--body);letter-spacing:.06em}
 
 /* дерево */
 svg.tree{display:block;margin-inline:auto;max-width:none}
 .edge{stroke:var(--line);stroke-width:2}
 .edge.hi{stroke:var(--gold);stroke-width:4}
-.elab{fill:var(--muted);font:600 14px var(--mono)}
+.elab{fill:var(--muted);font:600 16px var(--mono)}
 .elab.hi{fill:var(--gold)}
 .inode{fill:var(--panel2);stroke:var(--line);stroke-width:2}
 .inode.hi{stroke:var(--gold);stroke-width:3}
 .inode.cur,.inode.new{fill:var(--gold);stroke:var(--gold)}
-.icnt{fill:var(--fg);font:600 13px var(--mono)}
+.icnt{fill:var(--fg);font:600 16px var(--mono)}
 .icnt.dark{fill:var(--ink)}
 .lnode{fill:var(--panel2);stroke-width:2.5}
 .lnode.hi{fill:var(--hl);stroke-width:4}
 .lnode.m,.inode.m{stroke:var(--gold);stroke-dasharray:5 4;stroke-width:3}
 .lch{font:600 20px var(--mono)}
-.lcnt{fill:var(--muted);font:12px var(--mono)}
-.lcode{font:600 14px var(--mono);letter-spacing:.06em}
+.lcnt{fill:var(--muted);font:15px var(--mono)}
+.lcode{font:600 16px var(--mono);letter-spacing:.06em}
 .say{font-size:17px;min-height:3em}
 .say b{color:var(--gold);font-weight:600}
 
@@ -212,6 +212,9 @@ svg.tree{display:block;margin-inline:auto;max-width:none}
 .embed .card{padding:14px;gap:10px}
 .embed textarea{min-height:64px}
 .embed h2{font-size:17px}
+/* 720p-проектор: мелкий текст не меньше ~16px */
+.embed .lab,.embed h3,.embed .entry .cnt,.embed .muted{font-size:16px}
+.embed .btn,.embed .facts,.embed .legend span,.embed .bar span,.embed .chi span,.embed .chk,.embed .frac span{font-size:16px}
 .embed #p-break{display:grid;grid-template-columns:minmax(0,370px) minmax(0,1fr);grid-template-rows:auto 1fr;gap:10px}
 .embed #p-break>.card:nth-child(1){grid-column:1;grid-row:1}
 .embed #p-break>.card:nth-child(2){grid-column:2;grid-row:1/span 2}
@@ -228,7 +231,7 @@ svg.tree{display:block;margin-inline:auto;max-width:none}
 .embed #p-unzip>.split>.card:nth-child(2){grid-column:2;grid-row:1}
 .embed #p-unzip>.card:last-child{grid-column:2;grid-row:2}
 .embed #p-unzip .muted{display:none}
-.embed #dTree{max-height:250px;width:100%}
+.embed #dTree{max-height:320px;width:100%}
 .embed #p-break .plain-out{font-size:21px;line-height:1.35}
 .embed #p-unzip .speed{display:none}
 </style>
@@ -735,8 +738,8 @@ function renderBreak(){
     const x=padL+i*bw,r=REF[c],d=dec[i];
     s+=`<rect x="${x+bw*.08}" y="${Y(r)}" width="${bw*.84}" height="${padT+ih-Y(r)}" rx="3" fill="var(--line)"/>`;
     if(d>0)s+=`<rect x="${x+bw*.28}" y="${Y(d)}" width="${bw*.44}" height="${padT+ih-Y(d)}" rx="2" fill="var(--gold)"/>`;
-    s+=`<text class="bl" x="${x+bw/2}" y="${H-padB+20}" text-anchor="middle" fill="var(--fg)" style="font-size:15px">${c}</text>`;
-    s+=`<text class="bl" x="${x+bw/2}" y="${H-padB+42}" text-anchor="middle" fill="var(--gold)" style="font-size:13px">${AL[(i+bShift)%32]}</text>`;
+    s+=`<text class="bl" x="${x+bw/2}" y="${H-padB+20}" text-anchor="middle" fill="var(--fg)" style="font-size:16px">${c}</text>`;
+    s+=`<text class="bl" x="${x+bw/2}" y="${H-padB+42}" text-anchor="middle" fill="var(--gold)" style="font-size:16px">${AL[(i+bShift)%32]}</text>`;
   });
   s+=`<text class="ax" x="${padL-8}" y="${H-padB+20}" text-anchor="end" dominant-baseline="auto">текст</text><text class="ax" x="${padL-8}" y="${H-padB+42}" text-anchor="end" fill="var(--gold)">шифр</text>`;
   box.innerHTML=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Диаграммы частот: обычный текст и шифровка">${s}</svg>`;

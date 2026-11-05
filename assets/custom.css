@@ -1,6 +1,6 @@
 :root {
-  --r-main-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --r-heading-font: var(--r-main-font);
+  --r-main-font: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --r-heading-font: Georgia, serif;
   --r-heading-text-transform: none;
   --r-heading-letter-spacing: 0;
   --r-main-font-size: 36px;
@@ -14,8 +14,12 @@
   --r-selection-background-color: #f6d3e6;
   --r-selection-color: #0f1b33;
 }
-.reveal h1 { font-size: 2.1em; }
-.reveal h2 { font-size: 1.5em; margin-bottom: 0.6em; }
+.reveal .slides section { box-sizing: border-box; padding: 0 64px; }
+.reveal .slides section:has(iframe) { padding: 0; }
+.reveal h1, .reveal h2, .reveal h3 { font-weight: 700; line-height: 1.15; }
+.reveal { line-height: 1.4; }
+.reveal h1 { font-size: 2.4em; }
+.reveal h2 { font-size: 1.75em; margin-bottom: 0.6em; }
 .reveal strong, .reveal b { color: #9d1469; font-weight: 600; }
 .reveal ul, .reveal ol { display: block; text-align: left; margin-left: auto; margin-right: auto; width: fit-content; max-width: 100%; }
 .reveal li { margin: 0.25em 0; }
