@@ -10,7 +10,7 @@ make start   # http://localhost:8000, hot reload (PORT=9000 make start to change
 ```
 
 reveal.js loads the `.md` files with `fetch`, so `file://` won't work; any static server does.
-GitHub Pages: Settings → Pages → Deploy from a branch → `main` / `(root)`; all paths are relative.
+GitHub Pages: Settings → Pages → Source: **GitHub Actions**; `.github/workflows/pages.yml` deploys on every push to `main`.
 
 ## Layout
 
