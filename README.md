@@ -34,7 +34,7 @@ Embedded in slides as iframes; `#caesar #freq #break #tree #zip #unzip #where` s
 
 ## Printable alphabets
 
-A4 landscape cipher-ruler strips to cut out: [Russian](https://kpavlov.github.io/cypher-class/apps/print.html), [Estonian](https://kpavlov.github.io/cypher-class/apps/print-et.html).
+A4 landscape cipher-ruler strips to cut out (pick ru/et/en on the page): [print.html](https://kpavlov.github.io/cypher-class/apps/print.html).
 
 ## Keys
 
