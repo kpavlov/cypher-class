@@ -8,7 +8,7 @@
 
 ---
 
-## Выходной билет
+## 🎫 Выходной билет
 
 1. Зашифруй слово **«дом»** с ключом 2
 2. Мода шифровки — **«ф»**. Какой ключ?
@@ -22,19 +22,15 @@ Note:
 
 ---
 
-## Для желающих
+## ✳️ Для желающих
 
 Зашифруй записку другу ключом от 1 до 5 и принеси на следующий урок вместе с диаграммой частот.
 
 <div class="cols fit">
 <div>
 
-<div class="emoji">🎉</div>
-
-Спасибо! Агенты, задание выполнено!
-
 Слайды и демо:<br><a href="https://github.com/kpavlov/cypher-class" style="white-space:nowrap">github.com/kpavlov/cypher-class</a>
 
 </div>
-<figure style="flex:0 1 300px"><img src="slides/06-wrap-up/img/qr.svg" alt="QR-код: github.com/kpavlov/cypher-class"></figure>
+<figure style="flex:0 1 300px"><img src="slides/07-wrap-up/img/qr.svg" alt="QR-код: github.com/kpavlov/cypher-class"></figure>
 </div>
