@@ -21,7 +21,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # Site is static (reveal.js is vendored, paths are relative) — just ship the served files.
       - run: mkdir _site && cp -r index.html apps assets slides vendor _site/
       - uses: actions/upload-pages-artifact@v4
