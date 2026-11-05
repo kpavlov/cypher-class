@@ -1,5 +1,7 @@
 ## Что мы узнали
 
+<div class="emoji">🎓</div>
+
 - Шифр Цезаря сдвигает буквы, но **частоты не прячет**
 - **Диаграмма и мода** помогают взломать шифр
 - Те же частоты помогают **сжимать** файлы
@@ -27,7 +29,9 @@ Note:
 <div class="cols fit">
 <div>
 
-Спасибо!
+<div class="emoji">🎉</div>
+
+Спасибо! Агенты, задание выполнено!
 
 Слайды и демо:<br><a href="https://github.com/kpavlov/cypher-class" style="white-space:nowrap">github.com/kpavlov/cypher-class</a>
 

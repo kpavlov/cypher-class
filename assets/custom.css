@@ -60,3 +60,4 @@
 /* кнопка «Отправить на расшифровку» */
 .reveal a.send-btn{display:inline-block;margin-top:.8em;padding:.45em 1.1em;border-radius:999px;background:#9d1469;color:#fff;font-size:.62em;font-weight:700;text-decoration:none;box-shadow:0 2px 0 #4a0830}
 .reveal a.send-btn:hover{background:#6e0d4c;color:#fff}
+.reveal .emoji { font-size: 2.2em; line-height: 1; margin: 0.1em 0 0.25em; }
