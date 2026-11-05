@@ -249,6 +249,7 @@ svg.tree{display:block;margin-inline:auto;max-width:none}
   <section class="panel" id="p-caesar">
     <div class="split">
       <div class="card">
+        <div class="ctlrow"><label class="lab" for="cLang">Язык</label><select id="cLang" class="lang"></select></div>
         <label class="lab" for="cPlain">Сообщение</label>
         <textarea id="cPlain" spellcheck="false"></textarea>
         <div class="big-slider">
@@ -271,6 +272,7 @@ svg.tree{display:block;margin-inline:auto;max-width:none}
   <!-- Взлом -->
   <section class="panel" id="p-break" hidden>
     <div class="card">
+      <div class="ctlrow"><label class="lab" for="bLang">Язык</label><select id="bLang" class="lang"></select></div>
       <div class="ctlrow"><label class="lab" for="bSrc">Что взламываем</label><select id="bSrc"></select></div>
       <label class="lab" for="bText">Шифровка</label>
       <textarea id="bText" spellcheck="false" style="min-height:90px"></textarea>
@@ -278,7 +280,7 @@ svg.tree{display:block;margin-inline:auto;max-width:none}
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <h2>Сравниваем две диаграммы</h2>
-        <div class="legend"><span><i style="background:var(--line)"></i>обычный русский текст</span><span><i style="background:var(--gold)"></i>шифровка</span></div>
+        <div class="legend"><span><i style="background:var(--line)"></i>обычный <span class="langAdj">русский</span> текст</span><span><i style="background:var(--gold)"></i>шифровка</span></div>
       </div>
       <div id="bChart" class="scroll"></div>
       <div class="big-slider">
@@ -684,53 +686,76 @@ function renderDec(){
 }
 
 /* ---------- шифр Цезаря ---------- */
-const AL='абвгдежзийклмнопрстуфхцчшщъыьэюя';
-const REF={а:8.01,б:1.59,в:4.54,г:1.70,д:2.98,е:8.49,ж:0.94,з:1.65,и:7.35,й:1.21,к:3.49,л:4.40,м:3.21,н:6.70,о:10.97,п:2.81,р:4.73,с:5.47,т:6.26,у:2.62,ф:0.26,х:0.97,ц:0.48,ч:1.44,ш:0.73,щ:0.36,ъ:0.04,ы:1.90,ь:1.74,э:0.32,ю:0.64,я:2.01};
+const LANGS={
+  ru:{name:'Русский',adj:'русский',prep:'русском',al:'абвгдежзийклмнопрстуфхцчшщъыьэюя',
+    ref:{а:8.01,б:1.59,в:4.54,г:1.70,д:2.98,е:8.49,ж:0.94,з:1.65,и:7.35,й:1.21,к:3.49,л:4.40,м:3.21,н:6.70,о:10.97,п:2.81,р:4.73,с:5.47,т:6.26,у:2.62,ф:0.26,х:0.97,ц:0.48,ч:1.44,ш:0.73,щ:0.36,ъ:0.04,ы:1.90,ь:1.74,э:0.32,ю:0.64,я:2.01},
+    msg:'встречаемся у старой ратуши в полдень',
+    ciph:[
+      {id:'s1',name:'Шифровка 1 (легче)',plain:'о чём говорит море около города? оно говорит о кораблях, о долгой дороге домой и о том, что хороший математик сильнее любого шифра.',key:10},
+      {id:'s2',name:'Шифровка',plain:'около окна стоит кот. кот смотрит на молоко. молоко на столе, а кот на полу.',key:4},
+      {id:'s3',name:'Шифровка 3 (труднее)',plain:'один умный человек заметил: в любом тексте одни буквы встречаются очень часто, а другие почти никогда. больше всего букв о. кто построит диаграмму, тот откроет любой шифр цезаря.',key:5}]},
+  /* частоты эстонского: 60 статей ERR и Õhtuleht/Postimees (ноябрь 2026), ~201 000 букв; «a» — мода в 45 статьях из 60 */
+  et:{name:'Eesti',adj:'эстонский',prep:'эстонском',al:'abcdefghijklmnopqrsšzžtuvwõäöüxy',
+    ref:{a:12.32,b:0.88,c:0.11,d:3.92,e:11.18,f:0.14,g:1.77,h:1.63,i:9.68,j:1.64,k:4.7,l:5.85,m:3.72,n:5.06,o:4.17,p:1.71,q:0.01,r:3.56,s:8.63,š:0.01,z:0.03,ž:0.01,t:7.64,u:5.62,v:2.62,w:0.06,õ:1.09,ä:1.22,ö:0.32,ü:0.68,x:0.01,y:0.05},
+    msg:'kohtume raekoja juures keskpäeval',
+    ciph:[{id:'et1',name:'Šifr',plain:'kass istub akna all. kass vaatab piima. piim on laual, aga kass on maas.',key:6}]},
+  en:{name:'English',adj:'английский',prep:'английском',al:'abcdefghijklmnopqrstuvwxyz',
+    ref:{a:8.17,b:1.29,c:2.78,d:4.25,e:12.70,f:2.23,g:2.02,h:6.09,i:6.97,j:0.15,k:0.77,l:4.03,m:2.41,n:6.75,o:7.51,p:1.93,q:0.10,r:5.99,s:6.33,t:9.06,u:2.76,v:0.98,w:2.36,x:0.15,y:1.97,z:0.07},
+    msg:'meet me at the old town hall at noon',
+    ciph:[{id:'en1',name:'Cipher',plain:'the cat sees the green tree. the tree sees the cat. the cat needs cheese.',key:3}]},
+};
+const QS=new URLSearchParams(location.search);
+let lang=LANGS[QS.get('lang')]?QS.get('lang'):(Object.keys(LANGS).find(k=>LANGS[k].ciph.some(c=>c.id===QS.get('c')))||'ru');
+let AL,REF,N,REF_SUM,TOP,CIPH;
+function useLang(k){
+  lang=k;const L=LANGS[k];AL=L.al;REF=L.ref;N=AL.length;REF_SUM=Object.values(REF).reduce((a,b)=>a+b,0);
+  TOP=[...AL].reduce((a,c)=>REF[c]>REF[a]?c:a);
+  CIPH=L.ciph;CIPH.forEach(c=>c.text=shiftT(c.plain,c.key));
+}
 const normC=t=>t.toLowerCase().replace(/ё/g,'е');
-const shiftT=(t,k)=>[...normC(t)].map(c=>{const i=AL.indexOf(c);return i<0?c:AL[((i+k)%32+32)%32]}).join('');
+const shiftT=(t,k)=>[...normC(t)].map(c=>{const i=AL.indexOf(c);return i<0?c:AL[((i+k)%N+N)%N]}).join('');
+useLang(lang);
 let cKey=3;
-const cPlain=$('#cPlain');cPlain.value='встречаемся у старой ратуши в полдень';
+const cPlain=$('#cPlain');cPlain.value=LANGS[lang].msg;
 function renderCaesar(){
   $('#cKeyV').textContent=cKey;$('#cKeyN').textContent=cKey;
   const used=new Set([...normC(cPlain.value)]);
   $('#cStrip').innerHTML=[...AL].map(c=>`<span class="top${used.has(c)?' u':''}">${c}</span>`).join('')+
-    [...AL].map((c,i)=>`<span class="bot${used.has(c)?' u':''}">${AL[(i+cKey)%32]}</span>`).join('');
+    [...AL].map((c,i)=>`<span class="bot${used.has(c)?' u':''}">${AL[(i+cKey)%N]}</span>`).join('');
   $('#cOut').textContent=shiftT(cPlain.value,cKey)||'—';
 }
 cPlain.addEventListener('input',renderCaesar);
 $('#cKey').addEventListener('input',e=>{cKey=+e.target.value;renderCaesar()});
 
 /* ---------- взлом по диаграмме ---------- */
-const CIPH=[
-  {id:'s1',name:'Шифровка 1 (легче)',plain:'о чём говорит море около города? оно говорит о кораблях, о долгой дороге домой и о том, что хороший математик сильнее любого шифра.',key:10},
-  {id:'s2',name:'Шифровка',plain:'около окна стоит кот. кот смотрит на молоко. молоко на столе, а кот на полу.',key:4},
-  {id:'s3',name:'Шифровка 3 (труднее)',plain:'один умный человек заметил: в любом тексте одни буквы встречаются очень часто, а другие почти никогда. больше всего букв о. кто построит диаграмму, тот откроет любой шифр цезаря.',key:5}];
-CIPH.forEach(c=>c.text=shiftT(c.plain,c.key));
-let bSrc='s1',bShift=0,bCustom='';
+let bSrc=CIPH[0].id,bShift=0,bCustom='';
 const bSrcSel=$('#bSrc'),bText=$('#bText');
-CIPH.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;bSrcSel.appendChild(o)});
-{const o=document.createElement('option');o.value='own';o.textContent='Своя шифровка';bSrcSel.appendChild(o)}
-{const q=new URLSearchParams(location.search).get('c');if(q&&CIPH.some(c=>c.id===q))bSrc=q}
-bSrcSel.value=bSrc;bText.value=CIPH.find(c=>c.id===bSrc).text;
+function fillSrc(){
+  bSrcSel.innerHTML='';
+  CIPH.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;bSrcSel.appendChild(o)});
+  const o=document.createElement('option');o.value='own';o.textContent='Своя шифровка';bSrcSel.appendChild(o);
+  bSrcSel.value=bSrc;bText.value=bSrc==='own'?bCustom:CIPH.find(c=>c.id===bSrc).text;
+}
+{const q=QS.get('c');if(q&&CIPH.some(c=>c.id===q))bSrc=q}
+fillSrc();
 function setShift(k){bShift=k;$('#bShift').value=k}
 bSrcSel.addEventListener('change',()=>{bSrc=bSrcSel.value;bText.value=bSrc==='own'?bCustom:CIPH.find(c=>c.id===bSrc).text;setShift(0);renderBreak()});
 bText.addEventListener('input',()=>{if(bSrc!=='own'){bSrc='own';bSrcSel.value='own'}bCustom=bText.value;renderBreak()});
 $('#bShift').addEventListener('input',e=>{bShift=+e.target.value;renderBreak()});
 $('#cSend').addEventListener('click',()=>{bCustom=shiftT(cPlain.value,cKey);bSrc='own';bSrcSel.value='own';bText.value=bCustom;setShift(0);show('break')});
-function cfreq(t){const f=new Array(32).fill(0);let n=0;for(const c of normC(t)){const i=AL.indexOf(c);if(i>=0){f[i]++;n++}}return{f:f.map(v=>n?100*v/n:0),n}}
-/* хи-квадрат: сумма (наблюдали − ждали)² / ждали по всем 32 буквам */
-const REF_SUM=Object.values(REF).reduce((a,b)=>a+b,0);
-const chi2=(f,n,k)=>{let s=0;for(let i=0;i<32;i++){const e=n*REF[AL[i]]/REF_SUM,o=n*f[(i+k)%32]/100;s+=(o-e)*(o-e)/e}return s};
+function cfreq(t){const f=new Array(N).fill(0);let n=0;for(const c of normC(t)){const i=AL.indexOf(c);if(i>=0){f[i]++;n++}}return{f:f.map(v=>n?100*v/n:0),n}}
+/* хи-квадрат: сумма (наблюдали − ждали)² / ждали по всем буквам алфавита */
+const chi2=(f,n,k)=>{let s=0;for(let i=0;i<N;i++){const e=n*REF[AL[i]]/REF_SUM,o=n*f[(i+k)%N]/100;s+=(o-e)*(o-e)/e}return s};
 const fmt=x=>x>=1000?Math.round(x).toLocaleString('ru'):x.toFixed(1).replace('.',',');
-const overlap=(f,k)=>{let s=0;for(let i=0;i<32;i++)s+=Math.min(REF[AL[i]],f[(i+k)%32]);return s};
+const overlap=(f,k)=>{let s=0;for(let i=0;i<N;i++)s+=Math.min(REF[AL[i]],f[(i+k)%N]);return s};
 function renderBreak(){
   $('#bShiftV').textContent=bShift;
   const t=bText.value,{f,n}=cfreq(t),box=$('#bChart');
   $('#bOut').textContent=n?shiftT(t,-bShift):'';
   if(!n){box.innerHTML='<p class="empty">Вставьте шифровку — появится её диаграмма.</p>';$('#bMatch').innerHTML='';$('#bSay').textContent='';return}
-  const dec=[...AL].map((c,i)=>f[(i+bShift)%32]);
-  const cw=box.clientWidth||800,W=Math.max(cw,32*22+50),H=Math.max(230,Math.min(340,Math.round(cw*.36)));
-  const padL=46,padR=6,padT=16,padB=56,ih=H-padT-padB,bw=(W-padL-padR)/32;
+  const dec=[...AL].map((c,i)=>f[(i+bShift)%N]);
+  const cw=box.clientWidth||800,W=Math.max(cw,N*22+50),H=Math.max(230,Math.min(340,Math.round(cw*.36)));
+  const padL=46,padR=6,padT=16,padB=56,ih=H-padT-padB,bw=(W-padL-padR)/N;
   const mx=Math.max(11,...dec),step=mx>14?4:2,top=Math.ceil(mx/step)*step,Y=v=>padT+ih-ih*v/top;
   let s='';
   for(let v=0;v<=top;v+=step)s+=`<line class="gl" x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${padL-8}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle">${v}%</text>`;
@@ -739,20 +764,35 @@ function renderBreak(){
     s+=`<rect x="${x+bw*.08}" y="${Y(r)}" width="${bw*.84}" height="${padT+ih-Y(r)}" rx="3" fill="var(--line)"/>`;
     if(d>0)s+=`<rect x="${x+bw*.28}" y="${Y(d)}" width="${bw*.44}" height="${padT+ih-Y(d)}" rx="2" fill="var(--gold)"/>`;
     s+=`<text class="bl" x="${x+bw/2}" y="${H-padB+20}" text-anchor="middle" fill="var(--fg)" style="font-size:16px">${c}</text>`;
-    s+=`<text class="bl" x="${x+bw/2}" y="${H-padB+42}" text-anchor="middle" fill="var(--gold)" style="font-size:16px">${AL[(i+bShift)%32]}</text>`;
+    s+=`<text class="bl" x="${x+bw/2}" y="${H-padB+42}" text-anchor="middle" fill="var(--gold)" style="font-size:16px">${AL[(i+bShift)%N]}</text>`;
   });
   s+=`<text class="ax" x="${padL-8}" y="${H-padB+20}" text-anchor="end" dominant-baseline="auto">текст</text><text class="ax" x="${padL-8}" y="${H-padB+42}" text-anchor="end" fill="var(--gold)">шифр</text>`;
   box.innerHTML=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Диаграммы частот: обычный текст и шифровка">${s}</svg>`;
-  const ov=overlap(f,bShift);let best=0,bv=-1;for(let k=0;k<32;k++){const v=overlap(f,k);if(v>bv){bv=v;best=k}}
+  const ov=overlap(f,bShift);let best=0,bv=-1;for(let k=0;k<N;k++){const v=overlap(f,k);if(v>bv){bv=v;best=k}}
   const win=bShift===best&&ov>=55;
-  $('#bMatch').innerHTML=`<div class="bar" style="--c:${win?'var(--leaf)':'var(--sky)'}"><span class="lbl">Похожесть на обычный русский текст</span><span class="val">${Math.round(ov)}%</span><div class="track"><div class="fill" style="width:${Math.min(100,ov)}%"></div></div></div>`;
-  const x2=chi2(f,n,bShift);let xb=0,xv=1e18;for(let k=0;k<32;k++){const v=chi2(f,n,k);if(v<xv){xv=v;xb=k}}
-  $('#bMatch').insertAdjacentHTML('beforeend',`<div class="chi ${bShift===xb?'ok':''}"><span class="lbl"><span class="fx">χ² = Σ <span class="frac"><span>(было − ждали)²</span><span>ждали</span></span></span> — чем меньше, тем лучше</span><span class="val">${fmt(x2)}</span><span class="sub"><b>было</b> — сколько раз буква встретилась после сдвига; <b>ждали</b> — длина текста × доля этой буквы в русском языке; <b>Σ</b> — складываем по всем 32 буквам.<br>Наименьшее значение — при сдвиге ${xb} (${fmt(xv)}).${n<150?' Текст короткий, χ² приблизительный.':''} Ориентир: у верного сдвига χ² обычно 30–80, у неверного — сотни.</span></div>`);
-  let ti=0;for(let i=1;i<32;i++)if(f[i]>f[ti])ti=i;
+  $('#bMatch').innerHTML=`<div class="bar" style="--c:${win?'var(--leaf)':'var(--sky)'}"><span class="lbl">Похожесть на обычный ${LANGS[lang].adj} текст</span><span class="val">${Math.round(ov)}%</span><div class="track"><div class="fill" style="width:${Math.min(100,ov)}%"></div></div></div>`;
+  const x2=chi2(f,n,bShift);let xb=0,xv=1e18;for(let k=0;k<N;k++){const v=chi2(f,n,k);if(v<xv){xv=v;xb=k}}
+  $('#bMatch').insertAdjacentHTML('beforeend',`<div class="chi ${bShift===xb?'ok':''}"><span class="lbl"><span class="fx">χ² = Σ <span class="frac"><span>(было − ждали)²</span><span>ждали</span></span></span> — чем меньше, тем лучше</span><span class="val">${fmt(x2)}</span><span class="sub"><b>было</b> — сколько раз буква встретилась после сдвига; <b>ждали</b> — длина текста × доля этой буквы в ${LANGS[lang].prep} языке; <b>Σ</b> — складываем по всем ${N} буквам.<br>Наименьшее значение — при сдвиге ${xb} (${fmt(xv)}).${n<150?' Текст короткий, χ² приблизительный.':''} Ориентир: у верного сдвига χ² обычно 30–80, у неверного — сотни.</span></div>`);
+  let ti=0;for(let i=1;i<N;i++)if(f[i]>f[ti])ti=i;
   const say=$('#bSay');say.classList.toggle('win',win);
   say.innerHTML=win?'Диаграммы совпали! Ключ — <b>'+bShift+'</b>: каждую букву шифровки сдвигаем на '+bShift+' назад.'
-    :'Самая частая буква шифровки — <b>«'+AL[ti]+'»</b>. В обычном тексте самая частая — <b>«о»</b>. Двигайте ползунок, пока самый высокий жёлтый столбик не встанет над «о».';
+    :'Самая частая буква шифровки — <b>«'+AL[ti]+'»</b>. В обычном тексте самая частая — <b>«'+TOP+'»</b>. Двигайте ползунок, пока самый высокий жёлтый столбик не встанет над «'+TOP+'».';
 }
+
+/* ---------- язык ---------- */
+function setLang(k){
+  useLang(k);bSrc=CIPH[0].id;bCustom='';cPlain.value=LANGS[k].msg;
+  $('#cKey').max=$('#bShift').max=N-1;if(cKey>N-1)cKey=3;$('#cKey').value=cKey;setShift(0);
+  document.querySelectorAll('.lang').forEach(s=>s.value=k);
+  document.querySelectorAll('.langAdj').forEach(e=>e.textContent=LANGS[k].adj);
+  fillSrc();renderCaesar();renderBreak();
+}
+document.querySelectorAll('.lang').forEach(sel=>{
+  for(const k in LANGS){const o=document.createElement('option');o.value=k;o.textContent=LANGS[k].name;sel.appendChild(o)}
+  sel.value=lang;sel.addEventListener('change',()=>setLang(sel.value));
+});
+$('#cKey').max=$('#bShift').max=N-1;
+document.querySelectorAll('.langAdj').forEach(e=>e.textContent=LANGS[lang].adj);
 
 /* ---------- вкладки ---------- */
 const TABS=[['caesar','Шифр Цезаря'],['freq','Частоты и мода'],['break','Взлом шифра'],['tree','Дерево Хаффмана'],['zip','Сжатие'],['unzip','Расшифровка'],['where','История']];
